@@ -8,17 +8,15 @@
 
 ```bash
     .venv/bin/python scripts/trajectory_eval.py \
-    --estimated results/tum-fr1-xyz-gXqAVwwv/CameraTrajectory.txt \ 
+    --estimated results/tum-fr1-xyz-gXqAVwwv/CameraTrajectory.txt \
     --groundtruth data/rgbd_dataset_freiburg1_xyz/groundtruth.txt \
     --max-difference 0.02 \
     --output-dir results/evaluation
 ```
 
-默认输出保存到估计轨迹所在目录，包括 aligned_xz.png、position_error.png 和 evaluation.json；可通过 --output-dir 指定其他目录。`docs/` 集中存放说明文档，`learning/` 保存学习练习。`third_party/`、`build/`、`install/` 是已准备的 C++ 基线，`.venv/` 是当前 Python 环境；目录按实际需求逐步增加。
+默认输出保存到估计轨迹所在目录，包括 aligned_xz.png、position_error.png 和 evaluation.json；可通过 --output-dir 指定其他目录。`docs/` 集中存放说明文档，`third_party/`、`build/`、`install/` 是已准备的 C++ 基线，`.venv/` 是当前 Python 环境；目录按实际需求逐步增加。
 
 - [项目方案](docs/PROJECT_PLAN.md)
-- [当前进度](PROGRESS.md)
-- [已有仓库阅读记录](docs/REPOSITORY_REVIEW.md)
 
 实际构建依赖版本见 dependencies.json；上游算法能力与个人实现分开描述，不预填精度或性能成绩。第三方、构建、数据与运行目录默认忽略，未来发布仓库时保留版本清单和复现步骤。
 
@@ -32,4 +30,14 @@
 
 输入为估计轨迹与真值轨迹的 TUM 格式记录文件。程序按时间关联对应记录，并进行不缩放的刚体对齐，输出 X–Z 平面轨迹对比图、三维位置误差时间曲线和 JSON 评估报告。本次单次轨迹评估关联 790 对记录，位置 ATE RMSE 约为 1.04 厘米。同一输出目录重复运行会更新同名文件。
 
+## 运行 RGB-D 基线
+
+- 运行前需要准备好 ORB-SLAM3、数据集和项目虚拟环境。
+- 在项目根目录运行：
+
+```bash
+bash scripts/run_tum.sh
+```
+脚本会创建独立结果目录，运行 ORB-SLAM3，并自动调用轨迹评估工具。
+- 每次结果保存在新的 results/tum-fr1-xyz-XXXXXXXX/ 目录中。
 
