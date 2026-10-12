@@ -1,0 +1,14 @@
+{
+  "ORB_SLAM3": {
+    "url": "https://github.com/UZ-SLAMLab/ORB_SLAM3.git",
+    "commit": "4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4",
+    "path": "third_party/ORB_SLAM3"
+  },
+  "Pangolin": {
+    "url": "https://github.com/stevenlovegrove/Pangolin.git",
+    "tag": "v0.6",
+    "commit": "dd801d244db3a8e27b7fe8020cd751404aa818fd",
+    "path": "third_party/Pangolin",
+    "install_prefix": "install/pangolin"
+  }
+}

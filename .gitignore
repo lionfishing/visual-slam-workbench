@@ -1,0 +1,14 @@
+/build/
+/third_party/
+/data/
+/results/
+/install/
+/log/
+__pycache__/
+.venv/
+*.py[cod]
+/.vscode/
+/.idea/
+# 本地协作与学习记录，不属于对外交付内容
+/PROGRESS.md
+/docs/REPOSITORY_REVIEW.md
