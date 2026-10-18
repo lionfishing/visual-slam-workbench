@@ -12,3 +12,6 @@ __pycache__/
 # 本地协作与学习记录，不属于对外交付内容
 /PROGRESS.md
 /docs/REPOSITORY_REVIEW.md
+/ros2_ws/build/
+/ros2_ws/install/
+/ros2_ws/log/
