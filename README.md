@@ -2,7 +2,9 @@
 
 用于 SLAM / 机器人软件实习作品的长期项目，核心基于 ORB-SLAM3，个人模块将覆盖 ROS 2 数据接口、状态诊断、关键帧点云和实验评估。
 
-已有基线：源码固定、项目内依赖构建、首个 TUM RGB-D 序列运行与轨迹导出，以及单次轨迹的初步位置 ATE。尚未完成重复评估、RPE、ROS 2 集成和点云模块；当前基线是普通 C++ 程序。
+已有基线：源码固定、项目内依赖构建、首个 TUM RGB-D 序列运行与轨迹导出，以及单次轨迹的初步位置 ATE。尚未完成重复评估、RPE、ORB-SLAM3 的 ROS 2 封装和点云模块。
+
+已完成 ROS 2 RGB-D 播放节点；尚未完成 ORB-SLAM3 的 ROS 2 封装。
 
 当前开发入口：[scripts/trajectory_eval.py](scripts/trajectory_eval.py)，由用户逐步实现真实轨迹读取与绘图。在项目根目录运行：
 
@@ -40,4 +42,30 @@ bash scripts/run_tum.sh
 ```
 脚本会创建独立结果目录，运行 ORB-SLAM3，并自动调用轨迹评估工具。
 - 每次结果保存在新的 results/tum-fr1-xyz-XXXXXXXX/ 目录中。
+
+## ROS 2 RGB-D 数据播放
+- 运行入口：bash scripts/run_rgbd_player.sh。
+- 需要准备 TUM 数据集及关联文件。
+- 两个图像话题及对应的 echo 命令，要在不同终端运行。
+- 默认等待两个订阅者连接；脚本播放全部 792 对，固定周期 33ms，消息保留原始采集时间。
+- 当前入口只播放数据，不会启动 SLAM。
+- 数据集:data/rgbd_dataset_freiburg1_xyz/
+- 关联文件:third_party/ORB_SLAM3/Examples/RGB-D/associations/fr1_xyz.txt
+
+终端1：订阅彩色图像
+```bash
+source /opt/ros/humble/setup.bash
+ros2 topic echo /camera/color/image_raw sensor_msgs/msg/Image --field header
+```
+
+终端2：订阅深度图像
+```bash
+source /opt/ros/humble/setup.bash
+ros2 topic echo /camera/depth/image_raw sensor_msgs/msg/Image --field header
+```
+
+终端3：在项目根目录启动播放器
+```bash
+bash scripts/run_rgbd_player.sh
+```
 
