@@ -2,9 +2,7 @@
 
 用于 SLAM / 机器人软件实习作品的长期项目，核心基于 ORB-SLAM3，个人模块将覆盖 ROS 2 数据接口、状态诊断、关键帧点云和实验评估。
 
-已有基线：源码固定、项目内依赖构建、首个 TUM RGB-D 序列运行与轨迹导出，以及单次轨迹的初步位置 ATE。尚未完成重复评估、RPE、ORB-SLAM3 的 ROS 2 封装和点云模块。
-
-已完成 ROS 2 RGB-D 播放节点；尚未完成 ORB-SLAM3 的 ROS 2 封装。
+已完成固定版本 ORB-SLAM3 离线基线及位置 ATE 评估，并实现 ROS 2 RGB-D 数据播放、图像同步、SLAM 核心调用和带时间戳位姿发布。ROS 2 链路已通过 30 对真实图像的慢速短序列测试，并验证未初始化时不发布位姿。接入 SLAM 后的完整序列、实时性能、RPE 和点云建图尚未完成验收。
 
 当前开发入口：[scripts/trajectory_eval.py](scripts/trajectory_eval.py)，由用户逐步实现真实轨迹读取与绘图。在项目根目录运行：
 
@@ -24,7 +22,7 @@
 
 目录随实际需求逐步搭建。`scripts/` 存放处理真实项目数据的工具，过时教程和旧构建日志已清理，历史结论与验证边界保留在 PROGRESS.md；当前已实现位置 ATE，尚未实现 RPE
 
-## 评估工具第一版完成 
+## 评估工具第一版完成
 
 - aligned_xz.png：刚体对齐后，估计轨迹与真值轨迹在 X–Z 平面上的投影对比。
 - position_error.png：三维位置误差随时间变化，不是 X–Z 平面误差。误差同时包含 X、Y、Z 三个分量。
@@ -68,4 +66,3 @@ ros2 topic echo /camera/depth/image_raw sensor_msgs/msg/Image --field header
 ```bash
 bash scripts/run_rgbd_player.sh
 ```
-

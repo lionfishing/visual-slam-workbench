@@ -9,6 +9,8 @@
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include "sensor_msgs/msg/camera_info.hpp"
+#include "std_msgs/msg/u_int64.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]){
     const auto publish_period_ms =
         node->declare_parameter<std::int64_t>("publish_period_ms", 1000);
 
-    //! bianjiejiaoyan
+    //! 边界校验
     if(max_frames < 0 || publish_period_ms <= 0){
         RCLCPP_ERROR(node->get_logger(),
                     "max_frames must be >= 0; publish_period_ms must be > 0");
@@ -89,13 +91,19 @@ int main(int argc, char *argv[]){
         "frame.size: %zu, last_rgb_stamp: %s",
         frames.size(), frames.back().rgb_time.c_str());
 
-
+    //! 消息类型 话题名称 消息队列深度
     auto image_pub =
-    node->create_publisher<sensor_msgs::msg::Image>(
+        node->create_publisher<sensor_msgs::msg::Image>(
         "/camera/color/image_raw", 10);
     auto depth_pub =
-    node->create_publisher<sensor_msgs::msg::Image>(
+        node->create_publisher<sensor_msgs::msg::Image>(
         "/camera/depth/image_raw", 10);
+    auto camera_info_pub =
+        node->create_publisher<sensor_msgs::msg::CameraInfo>(
+        "/camera/color/camera_info", 10);
+    auto finished_pub =
+        node->create_publisher<std_msgs::msg::UInt64>(
+        "/dataset/playback_finished", 1);
 
     std::size_t frame_index = 0;
     const auto logger = node->get_logger();
@@ -104,9 +112,28 @@ int main(int argc, char *argv[]){
 
     auto timer = node->create_wall_timer(
         std::chrono::milliseconds(publish_period_ms),
-        [&frames, &frame_index, logger, dataset_root, image_pub, depth_pub, wait_for_subscribers, max_frames, &exit_code]() {
+        [&frames, &frame_index, logger, dataset_root, image_pub, depth_pub, camera_info_pub, finished_pub, wait_for_subscribers, max_frames, &exit_code]() {
             if (frame_index >= frames.size() || (max_frames > 0 &&
                                             frame_index >= static_cast<std::size_t>(max_frames))) {
+                std_msgs::msg::UInt64 finished_msg;
+                finished_msg.data = static_cast<std::uint64_t>(frame_index);
+                finished_pub->publish(finished_msg);
+                //! 等待已发送的信息被匹配订阅端的通信层确认 之保证接收到了，不保证处理了
+                const bool rgb_acked =
+                    image_pub->wait_for_all_acked(std::chrono::seconds(2));
+                const bool depth_acked =
+                    depth_pub->wait_for_all_acked(std::chrono::seconds(2));
+                const bool finish_acked =
+                    finished_pub->wait_for_all_acked(std::chrono::seconds(2));
+
+                    if (!rgb_acked || !depth_acked || !finish_acked) {
+                RCLCPP_ERROR(
+                    logger,
+                    "Timed out waiting for message acknowledgements"
+                    );
+                    exit_code = 1;
+                }
+
                 RCLCPP_INFO(logger, "Playback finished: %zu pairs published",
                 frame_index);
                 rclcpp::shutdown();
@@ -115,9 +142,10 @@ int main(int argc, char *argv[]){
 
             if (wait_for_subscribers && frame_index == 0 &&
             (image_pub->get_subscription_count() == 0 ||
-                depth_pub->get_subscription_count() == 0)) {
-                RCLCPP_INFO(logger, "Waiting for RGB and depth subscribers...");
-            return;
+                depth_pub->get_subscription_count() == 0 ||
+                finished_pub->get_subscription_count() == 0)) {
+                RCLCPP_INFO(logger, "Waiting for RGB, depth and finish subscribers...");
+                return;
             }
             const FramePair &pair = frames[frame_index];
             //! 路径拼接
@@ -196,16 +224,44 @@ int main(int argc, char *argv[]){
             depth_msg.header.stamp.nanosec =
                 std::stoul(pair.depth_time.substr(depth_dot + 1)) * 1000;
             depth_msg.header.frame_id = "camera_color_optical_frame";
+            //! 发布彩色图像对应的相机信息
+            sensor_msgs::msg::CameraInfo camera_info_msg;
+            camera_info_msg.header = msg.header;
+            camera_info_msg.height = 480;
+            camera_info_msg.width = 640;
+            camera_info_msg.distortion_model = "plumb_bob";
+            camera_info_msg.d = {
+                0.262383, -0.953104,
+                -0.005358, 0.002628,
+                1.163314
+            };
+            camera_info_msg.k = {
+                517.306408, 0.0,        318.643040,
+                0.0,        516.469215, 255.313989,
+                0.0,        0.0,        1.0
+            };
+            camera_info_msg.r = {
+                1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0
+            };
+            camera_info_msg.p = {
+                517.306408, 0.0,        318.643040, 0.0,
+                0.0,        516.469215, 255.313989, 0.0,
+                0.0,        0.0,        1.0,        0.0
+            };
 
             RCLCPP_INFO(logger, "index=%zu, rgb_time=%s",
                         frame_index, pair.rgb_time.c_str());
 
             image_pub->publish(msg);
             depth_pub->publish(depth_msg);
+            camera_info_pub->publish(camera_info_msg);
 
             ++frame_index;
         }
     );
+
 
     rclcpp::spin(node);
     rclcpp::shutdown();
