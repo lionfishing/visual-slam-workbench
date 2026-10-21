@@ -8,7 +8,7 @@ find_package(message_filters REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 
-#接入slam
+# Reuse the pinned core and the project-local Pangolin installation.
 get_filename_component(SLAM_PROJECT_ROOT
   "${CMAKE_CURRENT_SOURCE_DIR}/../../.."
   ABSOLUTE
@@ -34,21 +34,20 @@ ament_target_dependencies(rgbd_slam_node
   cv_bridge
   geometry_msgs
 )
-# 编译
-target_include_directories(rgbd_slam_node PRIVATE
+# Treat upstream headers as external; warnings in our own source remain visible.
+target_include_directories(rgbd_slam_node SYSTEM PRIVATE
   "${ORB_SLAM3_ROOT}"
   "${ORB_SLAM3_ROOT}/include"
   "${ORB_SLAM3_ROOT}/include/CameraModels"
   "${ORB_SLAM3_ROOT}/Thirdparty/Sophus"
   ${Pangolin_INCLUDE_DIRS}
 )
-# 链接
 target_link_libraries(rgbd_slam_node
   "${ORB_SLAM3_ROOT}/lib/libORB_SLAM3.so"
   Eigen3::Eigen
   ${Pangolin_LIBRARIES}
 )
-# 为安装好的节点提供运行时库搜索路径
+# ros2 run launches the installed binary, which needs its own runtime search path.
 set_target_properties(rgbd_slam_node PROPERTIES
   INSTALL_RPATH
     "${ORB_SLAM3_ROOT}/lib;${SLAM_PROJECT_ROOT}/install/pangolin/lib"

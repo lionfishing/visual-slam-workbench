@@ -11,13 +11,13 @@ add_executable(player_node src/player_node.cpp)
 target_compile_features(player_node PRIVATE cxx_std_17)
 
 target_include_directories(player_node PRIVATE ${OpenCV_INCLUDE_DIRS})
-#!两者保持一种写法
 target_link_libraries(player_node ${OpenCV_LIBS})
 
 ament_target_dependencies(player_node
   rclcpp
   sensor_msgs
-  std_msgs)
+  std_msgs
+)
 
 install(TARGETS player_node
   DESTINATION lib/${PROJECT_NAME}
